@@ -4,7 +4,7 @@ import 'package:todo_app/features/tasks/domain/entities/app_task.dart';
 import 'package:todo_app/features/tasks/presentation/bloc/tasks_bloc.dart';
 import 'package:todo_app/util/util.dart';
 
-class CustomAlertDialog extends StatelessWidget {
+class CustomAlertDialog extends StatefulWidget {
   CustomAlertDialog({
     Key? key,
     required this.titleController,
@@ -19,6 +19,14 @@ class CustomAlertDialog extends StatelessWidget {
   int? index;
 
   @override
+  State<CustomAlertDialog> createState() => _CustomAlertDialogState();
+}
+
+class _CustomAlertDialogState extends State<CustomAlertDialog> {
+  String? titleErrorText;
+  String? descErrorText;
+
+  @override
   Widget build(BuildContext context) {
     return BlocBuilder<TasksBloc, TasksState>(builder: (context, state) {
       if (state is LoadedHistory) {
@@ -27,7 +35,7 @@ class CustomAlertDialog extends StatelessWidget {
           title: Align(
             alignment: Alignment.center,
             child: Text(
-              edit ? 'Editar tarefa' : 'Adicionar tarefa',
+              widget.edit ? 'Editar tarefa' : 'Adicionar tarefa',
               style: const TextStyle(fontSize: 25),
             ),
           ),
@@ -35,8 +43,9 @@ class CustomAlertDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: titleController,
+                controller: widget.titleController,
                 decoration: InputDecoration(
+                  errorText: titleErrorText,
                   labelText: 'Título',
                   isDense: true,
                   border: OutlineInputBorder(
@@ -48,10 +57,11 @@ class CustomAlertDialog extends StatelessWidget {
                 height: 10,
               ),
               TextField(
-                controller: descController,
+                controller: widget.descController,
                 keyboardType: TextInputType.multiline,
                 maxLines: null,
                 decoration: InputDecoration(
+                  errorText: descErrorText,
                   labelText: 'Descrição',
                   isDense: true,
                   border: OutlineInputBorder(
@@ -67,15 +77,29 @@ class CustomAlertDialog extends StatelessWidget {
           actions: [
             GestureDetector(
               onTap: () async {
+                if (widget.titleController.text.trim().isEmpty) {
+                  setState(() {
+                    titleErrorText = 'Por favor preecha esse campo';
+                  });
+                  return;
+                }
+                if (widget.descController.text.trim().isEmpty) {
+                  setState(() {
+                    descErrorText = 'Por favor preecha esse campo';
+                  });
+                  return;
+                }
                 context.read<TasksBloc>().add(
                       StoreTaskEvent(
                         task: AppTask(
-                          id: edit
-                              ? state.history[index!].id
-                              : '${titleController.text} - ${DateTime.now()}',
-                          title: titleController.text,
-                          description: descController.text,
-                          isDone: edit ? state.history[index!].isDone : false,
+                          id: widget.edit
+                              ? state.history[widget.index!].id
+                              : '${widget.titleController.text} - ${DateTime.now()}',
+                          title: widget.titleController.text,
+                          description: widget.descController.text,
+                          isDone: widget.edit
+                              ? state.history[widget.index!].isDone
+                              : false,
                         ),
                       ),
                     );
@@ -84,7 +108,7 @@ class CustomAlertDialog extends StatelessWidget {
                 Navigator.of(context).pop();
               },
               child: Text(
-                edit ? 'Editar' : 'Adicionar',
+                widget.edit ? 'Editar' : 'Adicionar',
                 style: const TextStyle(color: Colors.blue, fontSize: 20),
               ),
             ),
